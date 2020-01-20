@@ -29,12 +29,13 @@ namespace StudyTimer {
         List<string> lstSelectedStrs = new List<string>();
         readonly string fileStr = "study.txt";
         readonly string strCategoryHeader = "----";
-        bool internetWillDisable = true; 
+        bool internetWillDisable = true;
+        bool loaded = false;
 
         public SetupWindow() {
             InitializeComponent();
             if(Properties.Settings.Default.LockedStrings == null)
-                Properties.Settings.Default.LockedStrings = new StringCollection(); 
+                Properties.Settings.Default.LockedStrings = new StringCollection();
         } 
 
         void RandomizeSelected()
@@ -280,8 +281,11 @@ namespace StudyTimer {
 
         private void Window_Loaded(object sender, RoutedEventArgs e) {
             LoadTabsFromFile();
-            LoadLockedOptions();
-            DelayInitialRandomize();  //have to delay briefly so the tabs and listboxes can fill properly so we can access the strings in the listboxes
+            LoadLockedOptions(); 
+            if(Properties.Settings.Default.LastTabIdx < tabs.Items.Count)
+                tabs.SelectedIndex = Properties.Settings.Default.LastTabIdx; //open to last selected tab last session 
+            DelayInitialRandomize();  //have to delay briefly so the tabs and listboxes can fill properly so we can access the strings in the listboxes 
+            loaded = true; //always do last here
         }
 
         async Task InitialRandomizeDelay() {  await Task.Delay(50); } 
@@ -378,6 +382,15 @@ namespace StudyTimer {
             internetWillDisable = !internetWillDisable;
             btnInternet.Content = internetWillDisable ? "🌐" : "🌑";
             btnInternet.ToolTip = "Internet will" + (internetWillDisable ? "" : " not") + " be disabled";
+        }
+
+        private void tabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            //save last clicked tab so when we reopen the program we open to that one 
+            if (!loaded) return;
+            int idx = tabs.SelectedIndex;  
+            Properties.Settings.Default.LastTabIdx = idx;
+            Properties.Settings.Default.Save();
         }
     }
 }

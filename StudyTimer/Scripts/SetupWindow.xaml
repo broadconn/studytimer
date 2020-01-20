@@ -41,16 +41,9 @@
                 </Grid.RowDefinitions>
 
                 <!-- Option select box -->
-                <TabControl Name="tabs" Margin="10,0,10,5" Grid.Row="0"  >
-                    <TabItem Header="Create" FontFamily="{StaticResource Comfortaa}">
-                        <ListBox Name="lstbAll" FontFamily="{StaticResource Comfortaa}" ToolTip="Double click entry to add it"/>
-                    </TabItem>
-                    <TabItem Header="VFX" FontFamily="{StaticResource Comfortaa}">
-                        <ListBox Name="lstbAllVFX" FontFamily="{StaticResource Comfortaa}" PreviewMouseDoubleClick="lstbAll_PreviewMouseDown"/>
-                    </TabItem>
-                </TabControl>
+                <TabControl Name="tabs" Margin="10,0,10,5" Grid.Row="0" SelectionChanged="tabs_SelectionChanged"/>
 
-                 <!--ui drag splitter-->
+                <!--ui drag splitter-->
                 <GridSplitter Grid.Row ="1" Width="Auto" HorizontalAlignment="Stretch" Background="LightGray"/>
                 
                 <!--Selected options panel-->
