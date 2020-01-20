@@ -1,0 +1,91 @@
+﻿<Window x:Class="StudyTimer.SetupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:StudyTimer"
+        xmlns:wpfTool="http://schemas.xceed.com/wpf/xaml/toolkit"
+        mc:Ignorable="d"
+        Title="do the thing" Width="418.5"
+        WindowStartupLocation="CenterScreen" Height="639" Loaded="Window_Loaded" >
+    <Window.Resources>
+    </Window.Resources>
+
+
+    <Grid Background="White">
+        <Grid Margin="0,0,0,55">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="40" />
+                <RowDefinition Height="1*" />
+            </Grid.RowDefinitions>
+
+            <!--Enter study length-->
+            <Grid Height="40" Grid.Row="0" Background="White">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="220" />
+                    <ColumnDefinition Width="150" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
+                <Label Content="Study length:" HorizontalContentAlignment="Right" VerticalContentAlignment="Center"  FontFamily="{StaticResource Comfortaa}" FontSize="15" Grid.Column="0" Margin="10,0,100,0"/>
+                <wpfTool:TimeSpanUpDown Name="timePickerStudy"  DefaultValue="3:00:00" Minimum="00:00:00" Margin="0,10,15,9"  FontSize="15"  FontFamily="{StaticResource Comfortaa}" Grid.Column="0" HorizontalAlignment="Right" Width="85" DisplayDefaultValueOnEmptyText="True"/>
+                <Label Content="Breaks:" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" FontFamily="{StaticResource Comfortaa}" Grid.Column="1" HorizontalAlignment="Left" Width="57"/>
+                <wpfTool:TimeSpanUpDown Name="timePickerBreak"  DefaultValue="00:15:00" Minimum="00:00:00" Margin="57,10,0,9" FontSize="15" FontFamily="{StaticResource Comfortaa}" Grid.Column="1" HorizontalAlignment="Left" Width="84" DisplayDefaultValueOnEmptyText="True"/>
+            </Grid>
+
+            <!--Select study items-->
+            <Grid Grid.Row="1" Background="WhiteSmoke">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="2*" />
+                    <RowDefinition Height="5" />
+                    <RowDefinition Height="0.8*" /> 
+                </Grid.RowDefinitions>
+
+                <!-- Option select box -->
+                <TabControl Name="tabs" Margin="10,0,10,5" Grid.Row="0"  >
+                    <TabItem Header="Create" FontFamily="{StaticResource Comfortaa}">
+                        <ListBox Name="lstbAll" FontFamily="{StaticResource Comfortaa}" ToolTip="Double click entry to add it"/>
+                    </TabItem>
+                    <TabItem Header="VFX" FontFamily="{StaticResource Comfortaa}">
+                        <ListBox Name="lstbAllVFX" FontFamily="{StaticResource Comfortaa}" PreviewMouseDoubleClick="lstbAll_PreviewMouseDown"/>
+                    </TabItem>
+                </TabControl>
+
+                 <!--ui drag splitter-->
+                <GridSplitter Grid.Row ="1" Width="Auto" HorizontalAlignment="Stretch" Background="LightGray"/>
+                
+                <!--Selected options panel-->
+                <Grid Grid.Row="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="50" />
+                        <RowDefinition Height="*" /> 
+                    </Grid.RowDefinitions>
+                    
+                    <!-- buttons -->
+                    <Button Content="🡇"  Grid.Row="0" Margin="10,10,0,10" ToolTip="Replace selected" Click="btnReplaceClick" HorizontalAlignment="Left" Width="30" FontWeight="Bold" FontSize="20" />
+                    <Button Content="🎲"  Grid.Row="0" Margin="60,10,0,10" MinHeight="29" ToolTip="Randomly choose from open tab" FontFamily="{StaticResource Comfortaa}" FontSize="20" Click="BtnRandomize_Click" HorizontalAlignment="Left" Width="30"/>
+                    <TextBox Name="txtbRandomOpts" Grid.Row="0" Margin="95,10,0,10" Text="3" VerticalContentAlignment="Center" FontFamily="{StaticResource Comfortaa}" FontSize="20" HorizontalAlignment="Left" Width="30" TextChanged="txtbRandomOpts_TextChanged"/>
+                    <Button Content="🌐" Name="btnInternet" Grid.Row="0" Margin="146,10,0,10" ToolTip="Internet will be disabled" MinHeight="29" FontFamily="{StaticResource Comfortaa}" FontSize="20" Click="btnInternet_Click" HorizontalAlignment="Left" Width="30"/>
+                    <!--File Button-->
+                    <Button Content="🗎" Name="btnFile" Click="btnFile_Click" FontSize="20" Grid.Row="0"  Margin="0,10,45,0" Height="30" VerticalAlignment="Top" RenderTransformOrigin="0.556,0.426" HorizontalAlignment="Right" Width="30" ToolTip="Edit options" />
+                    <Button Content="⭮" Name="btnReloadFile" Click="btnReloadFile_Click" FontSize="20" Grid.Row="0"  Margin="0,10,10,0" Height="30" VerticalAlignment="Top" RenderTransformOrigin="0.556,0.426" HorizontalAlignment="Right" Width="30" ToolTip="Refresh options" />
+
+                    <!-- Selected items box -->
+                    <ListBox Name="lstbSelected"  Margin="10,0,45,12"  Grid.Row="1"  FontFamily="{StaticResource Comfortaa}" PreviewMouseDoubleClick="lstbSelected_PreviewMouseDoubleClick" FontSize="18" ScrollViewer.HorizontalScrollBarVisibility="Hidden">
+                        <ListBox.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Name="selectedMenuRightClickLock" Header="Lock" Click="selectedMenuRightClickLock_Click"/>
+                                <MenuItem Name="selectedMenuRightClickUnlock" Header="Unlock" Click="selectedMenuRightClickUnlock_Click"/>
+                            </ContextMenu>
+                        </ListBox.ContextMenu>
+                    </ListBox>
+                    <Button Content="⭡" Name="btnReorderUp" Click="btnReorderUp_Click" FontSize="20" Grid.Row="1"  Margin="0,10,10,0" Height="30" VerticalAlignment="Top" RenderTransformOrigin="0.556,0.426" HorizontalAlignment="Right" Width="30" ToolTip="Move selected up" />
+                    <Button Content="⭣" Name="btnReorderDown" Click="btnReorderDown_Click" FontSize="20" Grid.Row="1"  Margin="0,45,10,0" Height="30" VerticalAlignment="Top" RenderTransformOrigin="0.556,0.426" HorizontalAlignment="Right" Width="30" ToolTip="Move selected down" />
+                </Grid> 
+            </Grid>
+            </Grid> 
+
+        <!--Go button :D-->
+        <Button Name="btnGo" Content="GO!"  FontFamily="{StaticResource Comfortaa}" FontSize="20" Height="45" VerticalAlignment="Bottom" Margin="5,0,5,5" Click="btnGo_Click" />
+    </Grid> 
+</Window>
+ 
