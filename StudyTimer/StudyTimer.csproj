@@ -90,8 +90,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Scripts\LockController.cs" />
     <Compile Include="Scripts\SetupWindow.xaml.cs">
       <DependentUpon>SetupWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Scripts\StudyBrowser.xaml.cs">
+      <DependentUpon>StudyBrowser.xaml</DependentUpon>
     </Compile>
     <Page Include="Scripts\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -106,6 +110,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="Scripts\SetupWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Scripts\StudyBrowser.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

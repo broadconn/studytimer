@@ -18,6 +18,8 @@ using System.Windows.Controls.Primitives;
 using System.IO;
 using System.Collections.Specialized;
 using System.Text.RegularExpressions;
+using StudyTimer.Scripts;
+using System.Threading; 
 
 namespace StudyTimer {
     /// <summary>
@@ -26,26 +28,24 @@ namespace StudyTimer {
     public partial class SetupWindow : Window {
         Random rand = new Random(); 
         MainWindow timerWindow; 
-        List<string> lstSelectedStrs = new List<string>();
+        List<string> lstSelectedStrsUI = new List<string>(); //current strings in the selected box at the bottom
         readonly string fileStr = "study.txt";
         readonly string strCategoryHeader = "----";
         bool internetWillDisable = true;
-        bool loaded = false;
+        bool loaded = false; 
 
         public SetupWindow() {
-            InitializeComponent();
-            if(Properties.Settings.Default.LockedStrings == null)
-                Properties.Settings.Default.LockedStrings = new StringCollection();
+            InitializeComponent(); 
         } 
 
         void RandomizeSelected()
         {
             List<ListBox> boxes = FindVisualChildren<ListBox>(tabs); //get all listboxes in tabs - probably only contains the open one
-            lstSelectedStrs = new List<string>(); 
+            lstSelectedStrsUI = new List<string>(); 
 
-            //add all the locked strings first
-            foreach (string s in Properties.Settings.Default.LockedStrings)
-                lstSelectedStrs.Add(s);
+            //add all the locked strings first 
+            foreach (string s in LockController.Instance.GetLocks(GetSelectedCategory()))
+                lstSelectedStrsUI.Add(s);
 
             //ensure we have a number of randoms to use
             if (txtbRandomOpts.Text.Length == 0)
@@ -78,44 +78,42 @@ namespace StudyTimer {
 
             //choose random from each option list in order, looping around if we need more
             int numChoicesRaw = int.Parse(txtbRandomOpts.Text);
-            int numChoices = Math.Max(numChoicesRaw - Properties.Settings.Default.LockedStrings.Count, 0); //subtract locked strings from remaining rands to get 
-            List<int> selectedIdxs = new List<int>();
+            int numChoices = Math.Max(numChoicesRaw - LockController.Instance.GetLocks(GetSelectedCategory()).Count, 0); //subtract locked strings from remaining rands to get how many we still need to randomly come up with
+            List<List<int>> selectedIdxs = new List<List<int>>();  //lists of selected indexes per sub-list
+            for (int i = 0; i < randomGroupLists.Count; i++) selectedIdxs.Add(new List<int>()); //populate with empty lists
+
+            //choose numChoices random things, one from each list before spamming the last one
             for (int j = 0; j < numChoices; j++)
             {
-                int numList = (j + Properties.Settings.Default.LockedStrings.Count) % randomGroupLists.Count; //the list we choose a random thing from
+                int numList = Math.Min(j + LockController.Instance.GetLocks(GetSelectedCategory()).Count, randomGroupLists.Count-1); //the category sub-list we choose a random thing from
                 int randomChoice;
                 string strChoice; 
                 do
                 {
                     randomChoice = rand.Next(0, randomGroupLists[numList].Value.Count);
                     string strHeader = randomGroupLists[numList].Key.Trim().Length > 0 ? ("[" + randomGroupLists[numList].Key + "]") : string.Empty; //add the section name for this entry
-                    strChoice = strHeader + " " + filterString(randomGroupLists[numList].Value[randomChoice].ToString());
-                } while (selectedIdxs.Contains(randomChoice) || lstSelectedStrs.Contains(strChoice));
-                selectedIdxs.Add(randomChoice);
-                lstSelectedStrs.Add( strChoice);
+                    strChoice = strHeader + " " + randomGroupLists[numList].Value[randomChoice].ToString();
+                } while ((selectedIdxs[numList].Contains(randomChoice) || lstSelectedStrsUI.Contains(strChoice)) && selectedIdxs[numList].Count < randomGroupLists[numList].Value.Count); //keep looking while the chosen entry has the same index or name as one that came before, and if there are still possible un-added entries in the list
+                selectedIdxs[numList].Add(randomChoice);
+                lstSelectedStrsUI.Add(strChoice);
             } 
 
-            lstbSelected.ItemsSource = lstSelectedStrs;
+            lstbSelected.ItemsSource = lstSelectedStrsUI;
             RefreshListBoxSelected();
-        } 
-
-        //any post processing  
-        string filterString(string s) { 
-            return s;
-        }
+        }  
 
         /// <summary>
         /// Re-adds the selected strings to the final box
         /// </summary>
         void RefreshListBoxSelected() {
             List<string> strs = new List<string>(); 
-            strs.AddRange(lstSelectedStrs);
+            strs.AddRange(lstSelectedStrsUI);
 
             //add lock symbols to the locked strings
             for (int i = 0; i < strs.Count; i++)
             {
                 string s = strs[i]; 
-                if (!strs[i].StartsWith("🔒") && Properties.Settings.Default.LockedStrings.Contains(s))
+                if (!strs[i].StartsWith("🔒") && LockController.Instance.GetLocks(GetSelectedCategory()).Contains(s))
                     strs[i] = "🔒" + s; 
             }
 
@@ -130,18 +128,18 @@ namespace StudyTimer {
         private void lstbAll_PreviewMouseDown(object sender, MouseButtonEventArgs e) {
             ListBox lstb = (ListBox)sender;
             if (lstb.SelectedItem != null) {
-                string selectedText = filterString(lstb.SelectedValue.ToString()); 
-                lstSelectedStrs.Add(selectedText);
+                string selectedText = lstb.SelectedValue.ToString(); 
+                lstSelectedStrsUI.Add(selectedText);
                 RefreshListBoxSelected(); 
             }
         }
 
         private void lstbSelected_PreviewMouseDoubleClick(object sender, MouseButtonEventArgs e) { 
             if (lstbSelected.SelectedItem != null) {
-                //dont delete locked strings
-                if (Properties.Settings.Default.LockedStrings.Contains(lstSelectedStrs[lstbSelected.SelectedIndex]))
+                //dont delete locked strings 
+                if (LockController.Instance.GetLocks(GetSelectedCategory()).Contains(lstSelectedStrsUI[lstbSelected.SelectedIndex]))
                     return;
-                lstSelectedStrs.RemoveAt(lstbSelected.SelectedIndex);
+                lstSelectedStrsUI.RemoveAt(lstbSelected.SelectedIndex);
                 RefreshListBoxSelected();
             }
         }
@@ -154,12 +152,28 @@ namespace StudyTimer {
                 TabItem openTab = ((TabItem)tabs.SelectedItem);
                 foreach (ListBox lb in boxes)
                 {
-                    if(lb.SelectedItem != null && lstbSelected.SelectedItem != null)
-                        lstSelectedStrs[lstbSelected.SelectedIndex] = filterString(lb.SelectedValue.ToString());
+                    if (lb.SelectedItem != null && lstbSelected.SelectedItem != null)
+                    {
+                        string selectedStr = lb.SelectedValue.ToString();
+                        string curSelectedStr = lstSelectedStrsUI[lstbSelected.SelectedIndex];
+
+                        //if selected thing is locked, update the lock text 
+                        bool edited = false;
+                        if (LockController.Instance.GetLocks(GetSelectedCategory()).Contains(curSelectedStr))
+                            edited = LockController.Instance.EditLock(GetSelectedCategory(), curSelectedStr, selectedStr);
+
+                        if(edited) //only edit ui if editing happened
+                            lstSelectedStrsUI[lstbSelected.SelectedIndex] = selectedStr;
+                    }
                 }
             }
             RefreshListBoxSelected(); 
         } 
+
+        string GetSelectedCategory()
+        {
+            return ((TabItem)tabs.SelectedItem).Header.ToString(); 
+        }
 
         private void Button_Click(object sender, RoutedEventArgs e) { 
 
@@ -169,9 +183,8 @@ namespace StudyTimer {
 
         }
 
-        private void CmbDividers_SelectionChanged(object sender, SelectionChangedEventArgs e) {
-
-        }
+        private void CmbDividers_SelectionChanged(object sender, SelectionChangedEventArgs e) { 
+        } 
 
         T FindFirstChild<T>(FrameworkElement element, string elName) where T : FrameworkElement {
             int childrenCount = VisualTreeHelper.GetChildrenCount(element);
@@ -217,7 +230,7 @@ namespace StudyTimer {
 
         private void btnGo_Click(object sender, RoutedEventArgs e) {
             timerWindow = new MainWindow();
-            timerWindow.SetData((int)((TimeSpan)timePickerStudy.Value).TotalSeconds, (int)((TimeSpan)timePickerBreak.Value).TotalSeconds, lstSelectedStrs, internetWillDisable);
+            timerWindow.SetData((int)((TimeSpan)timePickerStudy.Value).TotalSeconds, (int)((TimeSpan)timePickerBreak.Value).TotalSeconds, lstSelectedStrsUI, internetWillDisable);
             timerWindow.Show();
             timerWindow.Run();
             Hide();
@@ -260,7 +273,7 @@ namespace StudyTimer {
                     //create new tab
                     curTab = new TabItem();
                     curTab.FontFamily = (FontFamily)FindResource("Comfortaa");
-                    curTab.Header = "";
+                    curTab.Header = ""; 
                     tabs.Items.Add(curTab);
                 }
 
@@ -295,15 +308,24 @@ namespace StudyTimer {
             RandomizeSelected();
         }
 
-        void LoadLockedOptions()
+        async Task RandomizeDelayTabChange() { await Task.Delay(50); }
+        private async void DelayRandomizeOnTabChange()
         {
-            foreach (string s in Properties.Settings.Default.LockedStrings)
-                lstSelectedStrs.Add(s);
+            await RandomizeDelayTabChange();
+            RandomizeSelected();
+        }
+
+        void LoadLockedOptions()
+        { 
+            foreach (string s in LockController.Instance.GetLocks(GetSelectedCategory()))
+                lstSelectedStrsUI.Add(s);
         } 
 
         private void btnReloadFile_Click(object sender, RoutedEventArgs e)
         { 
             LoadTabsFromFile();
+            //StudyBrowser browser = new StudyBrowser();
+            //browser.Show();
         }
 
         private void btnReorderUp_Click(object sender, RoutedEventArgs e)
@@ -312,9 +334,9 @@ namespace StudyTimer {
             {
                 int wantedIdx = Math.Max(lstbSelected.SelectedIndex - 1, 0);
                 int oldIdx = lstbSelected.SelectedIndex;
-                string oldSlotStr = lstSelectedStrs[wantedIdx];
-                lstSelectedStrs[wantedIdx] = lstSelectedStrs[lstbSelected.SelectedIndex];
-                lstSelectedStrs[oldIdx] = oldSlotStr; 
+                string oldSlotStr = lstSelectedStrsUI[wantedIdx];
+                lstSelectedStrsUI[wantedIdx] = lstSelectedStrsUI[lstbSelected.SelectedIndex];
+                lstSelectedStrsUI[oldIdx] = oldSlotStr; 
                 RefreshListBoxSelected();
             }
         }
@@ -325,48 +347,28 @@ namespace StudyTimer {
             {
                 int wantedIdx = Math.Min(lstbSelected.SelectedIndex + 1, lstbSelected.Items.Count-1);
                 int oldIdx = lstbSelected.SelectedIndex;
-                string oldSlotStr = lstSelectedStrs[wantedIdx];
-                lstSelectedStrs[wantedIdx] = lstSelectedStrs[lstbSelected.SelectedIndex];
-                lstSelectedStrs[oldIdx] = oldSlotStr;
+                string oldSlotStr = lstSelectedStrsUI[wantedIdx];
+                lstSelectedStrsUI[wantedIdx] = lstSelectedStrsUI[lstbSelected.SelectedIndex];
+                lstSelectedStrsUI[oldIdx] = oldSlotStr;
                 RefreshListBoxSelected();
             }
         } 
 
         private void selectedMenuRightClickLock_Click(object sender, RoutedEventArgs e)
-        {
-            //cur properties 
-            StringCollection curLockStrs = Properties.Settings.Default.LockedStrings; 
-            if (curLockStrs == null) curLockStrs = new StringCollection();
+        { 
+            string category = ((TabItem)tabs.SelectedItem).Header.ToString();
+            string selectedStr = lstbSelected.SelectedItem.ToString();
+            LockController.Instance.AddLock(category, selectedStr); 
 
-            //get index of selected item in listbox  
-            string selectedStr = lstbSelected.SelectedItem.ToString();  
-
-            //set the new one
-            if(!curLockStrs.Contains(selectedStr))
-                curLockStrs.Add(selectedStr); 
-             
-            Properties.Settings.Default.LockedStrings = curLockStrs;
-            Properties.Settings.Default.Save();
-
-            //add lock icon  
             RefreshListBoxSelected();
         }
 
         private void selectedMenuRightClickUnlock_Click(object sender, RoutedEventArgs e)
-        {
-            //cur properties 
-            StringCollection curLockStrs = Properties.Settings.Default.LockedStrings; 
-            if (curLockStrs == null) curLockStrs = new StringCollection();
-             
+        { 
+            string category = ((TabItem)tabs.SelectedItem).Header.ToString();
             string selectedStr2 = lstbSelected.SelectedItem.ToString();
             string selectedStr = selectedStr2.Substring(2, selectedStr2.Length - 2); //remove lock icon
-
-            //see if the index is actually locked, remove it if so
-            if (curLockStrs.Contains(selectedStr))
-                curLockStrs.Remove(selectedStr); 
-             
-            Properties.Settings.Default.LockedStrings = curLockStrs;
-            Properties.Settings.Default.Save(); 
+            LockController.Instance.RemoveLock(category, selectedStr); 
 
             RefreshListBoxSelected();
         }  
@@ -385,12 +387,53 @@ namespace StudyTimer {
         }
 
         private void tabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        { 
+            //check we clicked a tab
+            if (e.Source is TabControl)
+            {
+                e.Handled = true;
+
+                //save last clicked tab so when we reopen the program we open to that one 
+                if (!loaded) return;
+                int idx = tabs.SelectedIndex;
+                Properties.Settings.Default.LastTabIdx = idx;
+                Properties.Settings.Default.Save();
+                //RandomizeSelected();
+                DelayRandomizeOnTabChange(); //delay so the box can finish loading before we choose our random entries
+            }
+        }
+
+        private void OnTabSelected(object sender, RoutedEventArgs e)
         {
-            //save last clicked tab so when we reopen the program we open to that one 
+            var tab = sender as TabItem;
+            if (tab != null)
+            {
+                // this tab is selected!
+            }
+        }
+
+        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        { 
+        }
+
+        private void Window_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+             
+        }
+
+        private void Window_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+             
+        }
+
+        private void tabs_LayoutUpdated(object sender, EventArgs e)
+        {
+        }
+
+        private void tabs_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
             if (!loaded) return;
-            int idx = tabs.SelectedIndex;  
-            Properties.Settings.Default.LastTabIdx = idx;
-            Properties.Settings.Default.Save();
+            //RandomizeSelected();
         }
     }
 }

@@ -7,7 +7,7 @@
         xmlns:wpfTool="http://schemas.xceed.com/wpf/xaml/toolkit"
         mc:Ignorable="d"
         Title="do the thing" Width="418.5"
-        WindowStartupLocation="CenterScreen" Height="639" Loaded="Window_Loaded" >
+        WindowStartupLocation="CenterScreen" Height="639" Loaded="Window_Loaded" SizeChanged="Window_SizeChanged" MouseDown="Window_MouseDown" MouseUp="Window_MouseUp" >
     <Window.Resources>
     </Window.Resources>
 
@@ -37,14 +37,14 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="2*" />
                     <RowDefinition Height="5" />
-                    <RowDefinition Height="0.8*" /> 
+                    <RowDefinition Name="RowSetup" Height="140" MinHeight="140"/> 
                 </Grid.RowDefinitions>
 
                 <!-- Option select box -->
-                <TabControl Name="tabs" Margin="10,0,10,5" Grid.Row="0" SelectionChanged="tabs_SelectionChanged"/>
+                <TabControl Name="tabs" Margin="10,0,10,5" Grid.Row="0" SelectionChanged="tabs_SelectionChanged" LayoutUpdated="tabs_LayoutUpdated" DataContextChanged="tabs_DataContextChanged"/>
 
                 <!--ui drag splitter-->
-                <GridSplitter Grid.Row ="1" Width="Auto" HorizontalAlignment="Stretch" Background="LightGray"/>
+                <GridSplitter Grid.Row ="1" Width="Auto" HorizontalAlignment="Stretch" Background="LightGray" />
                 
                 <!--Selected options panel-->
                 <Grid Grid.Row="2">
