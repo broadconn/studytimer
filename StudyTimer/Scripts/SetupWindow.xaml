@@ -6,8 +6,8 @@
         xmlns:local="clr-namespace:StudyTimer"
         xmlns:wpfTool="http://schemas.xceed.com/wpf/xaml/toolkit"
         mc:Ignorable="d"
-        Title="do the thing" Width="418.5"
-        WindowStartupLocation="CenterScreen" Height="639" Loaded="Window_Loaded" SizeChanged="Window_SizeChanged" MouseDown="Window_MouseDown" MouseUp="Window_MouseUp" >
+        Title="do the thing" Width="556.5"
+        WindowStartupLocation="CenterScreen" Height="270" MinHeight="270" Loaded="Window_Loaded" SizeChanged="Window_SizeChanged" MouseDown="Window_MouseDown" MouseUp="Window_MouseUp" WindowStyle="None" >
     <Window.Resources>
     </Window.Resources>
 
@@ -15,44 +15,31 @@
     <Grid Background="White">
         <Grid Margin="0,0,0,55">
             <Grid.RowDefinitions>
-                <RowDefinition Height="40" />
                 <RowDefinition Height="1*" />
+                <RowDefinition Height="40" />
             </Grid.RowDefinitions>
 
-            <!--Enter study length-->
-            <Grid Height="40" Grid.Row="0" Background="White">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="220" />
-                    <ColumnDefinition Width="150" />
-                    <ColumnDefinition Width="1*" />
-                </Grid.ColumnDefinitions>
-                <Label Content="Study length:" HorizontalContentAlignment="Right" VerticalContentAlignment="Center"  FontFamily="{StaticResource Comfortaa}" FontSize="15" Grid.Column="0" Margin="10,0,100,0"/>
-                <wpfTool:TimeSpanUpDown Name="timePickerStudy"  DefaultValue="3:00:00" Minimum="00:00:00" Margin="0,10,15,9"  FontSize="15"  FontFamily="{StaticResource Comfortaa}" Grid.Column="0" HorizontalAlignment="Right" Width="85" DisplayDefaultValueOnEmptyText="True"/>
-                <Label Content="Breaks:" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" FontFamily="{StaticResource Comfortaa}" Grid.Column="1" HorizontalAlignment="Left" Width="57"/>
-                <wpfTool:TimeSpanUpDown Name="timePickerBreak"  DefaultValue="00:15:00" Minimum="00:00:00" Margin="57,10,0,9" FontSize="15" FontFamily="{StaticResource Comfortaa}" Grid.Column="1" HorizontalAlignment="Left" Width="84" DisplayDefaultValueOnEmptyText="True"/>
-            </Grid>
-
             <!--Select study items-->
-            <Grid Grid.Row="1" Background="WhiteSmoke">
+            <Grid Name="SetupGrid" Grid.Row="0" Background="WhiteSmoke" MouseDown="Grid_MouseDown">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="2*" />
                     <RowDefinition Height="5" />
-                    <RowDefinition Name="RowSetup" Height="140" MinHeight="140"/> 
+                    <RowDefinition Name="RowSetup" Height="130" MinHeight="130"/>
                 </Grid.RowDefinitions>
 
                 <!-- Option select box -->
                 <TabControl Name="tabs" Margin="10,0,10,5" Grid.Row="0" SelectionChanged="tabs_SelectionChanged" LayoutUpdated="tabs_LayoutUpdated" DataContextChanged="tabs_DataContextChanged"/>
 
                 <!--ui drag splitter-->
-                <GridSplitter Grid.Row ="1" Width="Auto" HorizontalAlignment="Stretch" Background="LightGray" />
-                
+                <GridSplitter Name="GridSplittor" Grid.Row ="1" Width="Auto" HorizontalAlignment="Stretch" Background="LightGray" MouseDoubleClick="GridSplitter_MouseDoubleClick"/>
+
                 <!--Selected options panel-->
                 <Grid Grid.Row="2">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="50" />
-                        <RowDefinition Height="*" /> 
+                        <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    
+
                     <!-- buttons -->
                     <Button Content="🡇"  Grid.Row="0" Margin="10,10,0,10" ToolTip="Replace selected" Click="btnReplaceClick" HorizontalAlignment="Left" Width="30" FontWeight="Bold" FontSize="20" />
                     <Button Content="🎲"  Grid.Row="0" Margin="60,10,0,10" MinHeight="29" ToolTip="Randomly choose from open tab" FontFamily="{StaticResource Comfortaa}" FontSize="20" Click="BtnRandomize_Click" HorizontalAlignment="Left" Width="30"/>
@@ -63,7 +50,7 @@
                     <Button Content="⭮" Name="btnReloadFile" Click="btnReloadFile_Click" FontSize="20" Grid.Row="0"  Margin="0,10,10,0" Height="30" VerticalAlignment="Top" RenderTransformOrigin="0.556,0.426" HorizontalAlignment="Right" Width="30" ToolTip="Refresh options" />
 
                     <!-- Selected items box -->
-                    <ListBox Name="lstbSelected"  Margin="10,0,45,12"  Grid.Row="1"  FontFamily="{StaticResource Comfortaa}" PreviewMouseDoubleClick="lstbSelected_PreviewMouseDoubleClick" FontSize="18" ScrollViewer.HorizontalScrollBarVisibility="Hidden">
+                    <ListBox Name="lstbSelected"  Margin="10,0,45,0"  Grid.Row="1"  FontFamily="{StaticResource Comfortaa}" FontSize="18" PreviewMouseDoubleClick="lstbSelected_PreviewMouseDoubleClick" ScrollViewer.HorizontalScrollBarVisibility="Hidden">
                         <ListBox.ContextMenu>
                             <ContextMenu>
                                 <MenuItem Name="selectedMenuRightClickLock" Header="Lock" Click="selectedMenuRightClickLock_Click"/>
@@ -73,12 +60,21 @@
                     </ListBox>
                     <Button Content="⭡" Name="btnReorderUp" Click="btnReorderUp_Click" FontSize="20" Grid.Row="1"  Margin="0,10,10,0" Height="30" VerticalAlignment="Top" RenderTransformOrigin="0.556,0.426" HorizontalAlignment="Right" Width="30" ToolTip="Move selected up" />
                     <Button Content="⭣" Name="btnReorderDown" Click="btnReorderDown_Click" FontSize="20" Grid.Row="1"  Margin="0,45,10,0" Height="30" VerticalAlignment="Top" RenderTransformOrigin="0.556,0.426" HorizontalAlignment="Right" Width="30" ToolTip="Move selected down" />
-                </Grid> 
+                </Grid>
             </Grid>
-            </Grid> 
+
+            <!--Enter study length-->
+            <Grid Grid.Row="1"  Background="WhiteSmoke">
+                <Label Content="Study length:" HorizontalContentAlignment="Right" VerticalContentAlignment="Center"  FontFamily="{StaticResource Comfortaa}" FontSize="18" Margin="10,0,0,0" HorizontalAlignment="Left" Width="138"/>
+                <wpfTool:TimeSpanUpDown Name="timePickerStudy"  DefaultValue="3:00:00" Minimum="00:00:00" Margin="153,4,0,4"  FontSize="18"  FontFamily="{StaticResource Comfortaa}" DisplayDefaultValueOnEmptyText="True" HorizontalAlignment="Left" Width="95" />
+                <Label Content="Breaks:" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" FontFamily="{StaticResource Comfortaa}" FontSize="16" HorizontalAlignment="Left" Width="66" RenderTransformOrigin="0.421,0.5" Margin="260,0,0,0"/>
+                <wpfTool:TimeSpanUpDown Name="timePickerBreak"  DefaultValue="00:15:00" Minimum="00:00:00" Margin="331,4,0,4" FontSize="18" FontFamily="{StaticResource Comfortaa}" HorizontalAlignment="Left" Width="95" DisplayDefaultValueOnEmptyText="True"/>
+            </Grid>
+
+        </Grid>
 
         <!--Go button :D-->
         <Button Name="btnGo" Content="GO!"  FontFamily="{StaticResource Comfortaa}" FontSize="20" Height="45" VerticalAlignment="Bottom" Margin="5,0,5,5" Click="btnGo_Click" />
-    </Grid> 
+    </Grid>
 </Window>
  

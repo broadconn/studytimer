@@ -11,10 +11,9 @@ namespace StudyTimer.Scripts
     {
         private static LockController instance = null;
         private static readonly object padlock = new object();
-        const string lockSep = "*^*";
+        const char lockSep = '@'; 
 
-        static Dictionary<string, List<string>> categorizedLocks = new Dictionary<string, List<string>>();
-        bool loaded = false;
+        static Dictionary<string, List<StudyLock>> categorizedLocks = new Dictionary<string, List<StudyLock>>(); 
 
         LockController()
         { 
@@ -38,12 +37,15 @@ namespace StudyTimer.Scripts
         {
             foreach(string s in Properties.Settings.Default.LockedStrings)
             {
-                int sepPos = s.IndexOf(lockSep);
-                if (sepPos > 0)
-                {
-                    string category = s.Substring(0, sepPos);
-                    string lockStr = s.Substring(sepPos + lockSep.Length);
-                    AddLock(category, lockStr, false); //can't save because we are enumerating through lockedStrings - double enumeration is illegal
+                int sepPos1 = s.IndexOf(lockSep);
+                if (sepPos1 > 0)
+                { 
+                    string[] lockstrs = s.Split(lockSep);
+                    if(lockstrs.Length >= 3)
+                    {
+                        StudyLock sl = new StudyLock(lockstrs[0], lockstrs[1], int.Parse(lockstrs[2]));
+                        AddLock(sl, false); 
+                    }
                 }
                 else { 
                     //ignore the disgusting ill-formatted heathen
@@ -52,35 +54,72 @@ namespace StudyTimer.Scripts
             SaveLocks();
         }
 
-        public List<string> GetLocks(string category)
+        public List<StudyLock> GetLocks(string category)
         {
             if (!categorizedLocks.ContainsKey(category))
-                return new List<string>();
+                return new List<StudyLock>();
             return categorizedLocks[category];
         }
 
-        public void AddLock(string category, string lockStr, bool save = true)
+        public void AddLock(StudyLock lok, bool save = true)
         {
-            if (!categorizedLocks.ContainsKey(category)) 
-                categorizedLocks.Add(category, new List<string>()); 
-            categorizedLocks[category].Add(lockStr);
+            if (!categorizedLocks.ContainsKey(lok.Category)) 
+                categorizedLocks.Add(lok.Category, new List<StudyLock>()); 
+            categorizedLocks[lok.Category].Add(lok);
             if(save) SaveLocks();
         }
 
-        public void RemoveLock(string category, string lockStr, bool save = true)
+        public StudyLock GetLockAtIdx (string category, int idx)
+        { 
+            foreach(StudyLock s in categorizedLocks[category])
+            {
+                if (s.DesiredIdx == idx)
+                    return s;
+            }
+            return null;
+        }
+
+        public void RemoveLock(string category, int idx, bool save = true)
         {
             if (!categorizedLocks.ContainsKey(category))
-                categorizedLocks.Add(category, new List<string>());
-            categorizedLocks[category].Remove(lockStr);
+                categorizedLocks.Add(category, new List<StudyLock>());
+            StudyLock sl = null;
+            foreach(StudyLock s in categorizedLocks[category]) 
+                if(s.DesiredIdx == idx)
+                {
+                    sl = s;
+                    break;
+                }    
+            if(sl != null) categorizedLocks[category].Remove(sl);
             if (save) SaveLocks();
         }
 
         public bool EditLock(string category, string oldLockStr, string newLockStr, bool save = true)
         {
             //make sure category and old lock string exist in current lockset
-            if (!categorizedLocks.ContainsKey(category)) return false; 
-            if (!categorizedLocks[category].Contains(oldLockStr)) return false;
-            categorizedLocks[category][categorizedLocks[category].IndexOf(oldLockStr)] = newLockStr;
+            if (!categorizedLocks.ContainsKey(category)) return false;
+            int lockIdx = LockStrIdx(categorizedLocks[category], oldLockStr); 
+            if (lockIdx < 0) return false;
+            categorizedLocks[category][lockIdx].LockStr = newLockStr;
+            if (save) SaveLocks();
+            return true;
+        }
+
+        int LockStrIdx(List<StudyLock> lks, string s)
+        {
+            for (int i = 0; i < lks.Count; i++)
+            {
+                StudyLock sl = lks[i];
+                if (sl.LockStr == s)
+                    return i;
+            }
+            return -1;
+        }
+
+        public bool OverwriteCategoryLocks(string category, List<StudyLock> newLocks, bool save = true) 
+        { 
+            if (!categorizedLocks.ContainsKey(category)) return false;
+            categorizedLocks[category] = newLocks;
             if (save) SaveLocks();
             return true;
         }
@@ -89,17 +128,34 @@ namespace StudyTimer.Scripts
         {
             //pack dictionary into a single stringcollection
             StringCollection sc = new StringCollection();
-            foreach (KeyValuePair<string, List<string>> entry in categorizedLocks)
+            foreach (KeyValuePair<string, List<StudyLock>> entry in categorizedLocks)
             { 
                 string categ = entry.Key;
-                foreach(string s in entry.Value)
+                foreach(StudyLock s in entry.Value)
                 {
-                    string savedStr = categ + lockSep + s;
+                    string savedStr = categ + lockSep + s.LockStr + lockSep + s.DesiredIdx;
                     sc.Add(savedStr);
                 }
             }
             Properties.Settings.Default.LockedStrings.Clear();
             Properties.Settings.Default.LockedStrings = sc;
+            Properties.Settings.Default.Save();
         }
     }
+}
+
+class StudyLock
+{
+    string category;
+    string lockStr;
+    int desiredIdx; 
+    public StudyLock(string category, string lockStr, int desiredIdx)
+    {
+        this.category = category;
+        this.lockStr = lockStr;
+        this.desiredIdx = desiredIdx;
+    } 
+    public string LockStr { get => lockStr; set => lockStr = value; }
+    public int DesiredIdx { get => desiredIdx; set => desiredIdx = value; }
+    public string Category { get => category; set => category = value; }
 }

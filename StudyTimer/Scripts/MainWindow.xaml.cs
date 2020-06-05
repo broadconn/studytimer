@@ -7,6 +7,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using System.Diagnostics;
+using System.IO;
 
 namespace WpfApp1 {
     public delegate void TimerEndsEventHandler();
@@ -155,10 +156,16 @@ namespace WpfApp1 {
                         isSubject = !isSubject;
                         if (isSubject) curSubjectIdx++;
 
+                        //if in break, enable net. If resuming study, put net back to desrired setting.
+                        bool inbreak = InBreak(percPassed);
+                        if (inbreak) EnableInternet(true);
+                        else EnableInternet(internetEnabled);
+
+                        //update visuals, set progress text 
                         Dispatcher.Invoke(new Action(() => {
                             MinHeight = isSubject ? 35 : 25;
                             lblStudy.Content = isSubject ? lstSubjects[curSubjectIdx] : "Break! Next up: " + lstSubjects[curSubjectIdx+1];
-                        }), DispatcherPriority.ContextIdle); //set progress text    
+                        }), DispatcherPriority.ContextIdle);   
                     }
 
                     //progress bar  
@@ -320,7 +327,50 @@ namespace WpfApp1 {
             paused = !paused;
         }  
 
-        void EnableInternet(bool enable) {
+        void EnableInternet(bool enable)
+        {
+            string filePath = "C:\\Windows\\System32\\drivers\\etc\\hosts";
+
+            //open hosts file
+            /*List<string> hostsLines = new List<string>();
+            try
+            {
+                //Pass the file path and file name to the StreamReader constructor
+                StreamReader sr = new StreamReader(filePath);
+
+                //Read the first line of text
+                string line = sr.ReadLine(); 
+                //Continue to read until you reach end of file
+                while (line != null)
+                {
+                    //write the lie to console window
+                    Console.WriteLine(line);
+                    hostsLines.Add(line);
+                    //Read the next line
+                    line = sr.ReadLine();
+                } 
+                //close the file
+                sr.Close(); 
+            }
+            catch (Exception e) { Console.WriteLine("Exception: " + e.Message); }
+
+
+            //write to hosts
+            try
+            { 
+                //Pass the filepath and filename to the StreamWriter Constructor
+                StreamWriter sw = new StreamWriter(filePath);
+
+                for(int i = 0; i < hostsLines.Count; i++)
+                {
+                    sw.WriteLine(hostsLines[i]);
+                } 
+
+                //Close the file
+                sw.Close();
+            }
+            catch (Exception e) { Console.WriteLine("Exception: " + e.Message); } */
+
             string str = enable ? "renew" : "release";
             ProcessStartInfo internet = new ProcessStartInfo() {
                 FileName = "cmd.exe",
@@ -332,12 +382,6 @@ namespace WpfApp1 {
 
         private void BtnInternet_Click(object sender, RoutedEventArgs e) {
             //ToggleInternetSetting();
-        }
-
-        void ToggleInternetSetting() {
-            if(!progressRunning)
-                internetEnabled = !internetEnabled;
-            UpdateBtnCols();
         }
 
         private void TheWindow_MouseEnter(object sender, MouseEventArgs e) {
