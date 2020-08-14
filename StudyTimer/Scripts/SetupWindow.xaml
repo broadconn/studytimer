@@ -61,6 +61,17 @@
                     <Button Content="⭡" Name="btnReorderUp" Click="btnReorderUp_Click" FontSize="20" Grid.Row="1"  Margin="0,10,10,0" Height="30" VerticalAlignment="Top" RenderTransformOrigin="0.556,0.426" HorizontalAlignment="Right" Width="30" ToolTip="Move selected up" />
                     <Button Content="⭣" Name="btnReorderDown" Click="btnReorderDown_Click" FontSize="20" Grid.Row="1"  Margin="0,45,10,0" Height="30" VerticalAlignment="Top" RenderTransformOrigin="0.556,0.426" HorizontalAlignment="Right" Width="30" ToolTip="Move selected down" />
                 </Grid>
+                <Button Click="btnAddTemp_Click" Margin="0,0,54,10" Grid.Row="2" HorizontalAlignment="Right" Width="33" Height="32" VerticalAlignment="Bottom">
+                    <StackPanel>
+                        <TextBlock>+</TextBlock>
+                        <Popup Name="customEntryPopup">
+                            <Grid Width="184" Height="28">
+                                <Button Content="Add"  FontFamily="{StaticResource Comfortaa}" FontSize="12" Name="btnSaveTempEntry" Click="btnSaveTempEntry_Click" HorizontalAlignment="Right" Width="57" />
+                                <TextBox Name="customEntryTextBox" Margin="0,0,57,0" VerticalContentAlignment="Center" MaxLines="1" KeyDown="customEntryTextBox_KeyDown" FontFamily="{StaticResource Comfortaa}" FontSize="16"  />
+                            </Grid>
+                        </Popup>
+                    </StackPanel>
+                </Button>
             </Grid>
 
             <!--Enter study length-->
@@ -70,7 +81,6 @@
                 <Label Content="Breaks:" HorizontalContentAlignment="Right" VerticalContentAlignment="Center" FontFamily="{StaticResource Comfortaa}" FontSize="16" HorizontalAlignment="Left" Width="66" RenderTransformOrigin="0.421,0.5" Margin="260,0,0,0"/>
                 <wpfTool:TimeSpanUpDown Name="timePickerBreak"  DefaultValue="00:15:00" Minimum="00:00:00" Margin="331,4,0,4" FontSize="18" FontFamily="{StaticResource Comfortaa}" HorizontalAlignment="Left" Width="95" DisplayDefaultValueOnEmptyText="True"/>
             </Grid>
-
         </Grid>
 
         <!--Go button :D-->
@@ -78,3 +88,4 @@
     </Grid>
 </Window>
  
+    

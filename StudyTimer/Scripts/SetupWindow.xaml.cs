@@ -44,11 +44,7 @@ namespace StudyTimer {
         void RandomizeSelected()
         {
             List<ListBox> boxes = FindVisualChildren<ListBox>(tabs); //get all listboxes in tabs - probably only contains the open one
-            lstSelectedStrsUI = new List<string>(); 
-
-            //add all the locked strings first 
-            //foreach (StudyLock s in LockController.Instance.GetLocks(GetSelectedCategory()))
-            //    lstSelectedStrsUI.Add(s.LockStr);
+            lstSelectedStrsUI = new List<string>();  
 
             //ensure we have a number of randoms to use
             if (txtbRandomOpts.Text.Length == 0)
@@ -140,21 +136,14 @@ namespace StudyTimer {
                         selectedStrs[i] = "🔒" + s; 
                     newLockOrder.Add(new StudyLock(GetSelectedCategory(), s, i));
                 }
-            }
-             
-            //ObservableCollection<DemoModel> models = new ObservableCollection<DemoModel>();
-            //models.Add(new DemoModel() { Text = "Some Text #1.", DynamicText2 = "hehe" });
-            //models.Add(new DemoModel() { Text = "Some Text #2." });
-            //models.Add(new DemoModel() { Text = "Some Text #3." });
-            //models.Add(new DemoModel() { Text = "Some Text #4." });
-            //models.Add(new DemoModel() { Text = "Some Text #5." });
-            //SelectedThingsDataGrid.ItemsSource = models;
+            } 
 
             lstbSelected.ItemsSource = selectedStrs;
 
             //apply new lock order
             LockController.Instance.OverwriteCategoryLocks(GetSelectedCategory(), newLockOrder);
         }
+
         private void ChangeText(object sender, RoutedEventArgs e)
         {
             DemoModel model = (sender as Button).DataContext as DemoModel;
@@ -231,7 +220,7 @@ namespace StudyTimer {
                             lstSelectedStrsUI[lstbSelected.SelectedIndex] = selectedStr;
                     }
                 }
-            }
+            } 
             RefreshListBoxSelected(); 
         } 
 
@@ -382,9 +371,7 @@ namespace StudyTimer {
 
         private void btnReloadFile_Click(object sender, RoutedEventArgs e)
         { 
-            LoadTabsFromFile();
-            //StudyBrowser browser = new StudyBrowser();
-            //browser.Show();
+            LoadTabsFromFile(); 
         }
 
         private void btnReorderUp_Click(object sender, RoutedEventArgs e)
@@ -525,7 +512,44 @@ namespace StudyTimer {
         {
             if (e.ChangedButton == MouseButton.Left)
                 this.DragMove();
-        } 
+            ClosePopup();
+        }
+
+        private void btnAddTemp_Click(object sender, RoutedEventArgs e)
+        {
+            customEntryPopup.IsOpen = true;
+            customEntryTextBox.Text = "";
+            customEntryTextBox.Focus(); 
+        }
+
+        private void btnSaveTempEntry_Click(object sender, RoutedEventArgs e)
+        {
+            e.Handled = true;
+            SavePopup();
+        }
+
+        void SavePopup()
+        { 
+            string customEntry = customEntryTextBox.Text;
+
+            lstSelectedStrsUI.Add(customEntry);
+            RefreshListBoxSelected();
+
+            ClosePopup();
+        }
+
+        void ClosePopup()
+        {
+            customEntryPopup.IsOpen = false;
+        }
+
+        private void customEntryTextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                SavePopup();
+            }
+        }
     }
 
     class DemoModel : INotifyPropertyChanged
